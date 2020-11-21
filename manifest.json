@@ -1,0 +1,15 @@
+{
+  "short_name": "Berry Farm",
+  "name": "Berry Farm - stake \uD83C\uDF4C - get \uD83E\uDD52 - farm Ⓝ",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
