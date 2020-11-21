@@ -333,7 +333,6 @@ class App extends React.Component {
                 className="btn btn-outline-none"
                 href="https://berryclub.io">{Avocado} Berry Club {Banana}
               </a>
-
               {content}
               {stats}
               <div>
