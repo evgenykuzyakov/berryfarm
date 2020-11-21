@@ -203,13 +203,13 @@ class App extends React.Component {
   async stakeBananas(bananas) {
     await this.refreshAccountStats();
     if (bananas) {
-      bananas = new BN(bananas) * this._pixelCostBN;
+      bananas = new BN(Math.trunc(bananas * 100000)) * this._pixelCostBN / new BN(100000);
     } else {
       bananas = this.state.account.bananaBalanceBN;
     }
     await this._bananaContract.transfer_with_vault({
       receiver_id: NearConfig.contractName,
-      amount: bananas.toString(),
+      amount: bananas.toFixed(0).toString(),
       payload: '"DepositAndStake"',
     }, new BN("50000000000000"), new BN("1"))
   }
@@ -385,7 +385,7 @@ class App extends React.Component {
               </a>
               </div>
               <div className="call-to-action">
-              Swap {Banana} to stake {Cucumber} to farm {Near}
+                Swap {Banana} to stake {Cucumber} to farm {Near}
               </div>
               {content}
               {stats}
