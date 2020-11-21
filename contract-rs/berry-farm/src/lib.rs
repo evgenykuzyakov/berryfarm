@@ -1,6 +1,8 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
-use near_sdk::json_types::{Base64VecU8, ValidAccountId, U128};
+use near_sdk::json_types::{ValidAccountId, U128};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::serde_json;
 use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise};
 
 mod token;
@@ -19,6 +21,23 @@ pub struct Account {
     pub last_near_per_cucumber_numer: Balance,
     pub near_balance: Balance,
     pub cucumber_balance: Balance,
+    pub near_claimed: Balance,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct HumanAccount {
+    pub near_balance: U128,
+    pub cucumber_balance: U128,
+    pub near_claimed: U128,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct HumanStats {
+    pub total_cucumber_balance: U128,
+    pub total_near_claimed: U128,
+    pub total_near_received: U128,
 }
 
 pub const NEAR_PER_CUCUMBER_DENOM: Balance = 1_000_000_000_000_000_000;
@@ -67,9 +86,21 @@ pub trait ExtVaultFungibleToken {
     fn transfer_unsafe(&mut self, receiver_id: AccountId, amount: U128);
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum OnReceiverPayload {
     DepositAndStake,
+}
+
+/// Implements a trait to receiver_id
+pub trait VaultFungibleTokenReceiver {
+    fn on_receive_with_vault(
+        &mut self,
+        sender_id: ValidAccountId,
+        amount: U128,
+        vault_id: VaultId,
+        payload: String,
+    ) -> Promise;
 }
 
 #[near_bindgen]
@@ -98,6 +129,10 @@ impl Farm {
 
     #[payable]
     pub fn take_my_near(&mut self) {
+        assert!(
+            self.total_cucumber_balance >= NEAR_PER_CUCUMBER_DENOM,
+            "Not enough cucumbers"
+        );
         let attached_deposit = env::attached_deposit();
         let near_per_cucumber = (U256::from(attached_deposit)
             * U256::from(NEAR_PER_CUCUMBER_DENOM)
@@ -107,18 +142,84 @@ impl Farm {
         self.total_near_received += attached_deposit;
     }
 
-    pub fn on_receive_with_vault(
+    pub fn register_account(&mut self) {
+        let (account_id_hash, account) = self.get_mut_account(&env::predecessor_account_id());
+        self.save_account(&account_id_hash, &account);
+    }
+
+    pub fn account_exists(&self, account_id: ValidAccountId) -> bool {
+        self.get_internal_account(account_id.as_ref()).1.is_some()
+    }
+
+    pub fn claim_near(&mut self) -> U128 {
+        let account_id = env::predecessor_account_id();
+        let (account_id_hash, mut account) = self.get_mut_account(&account_id);
+        let amount = account.near_balance;
+        account.near_balance = 0;
+        account.near_claimed += amount;
+        self.save_account(&account_id_hash, &account);
+        if amount > 0 {
+            Promise::new(account_id).transfer(amount);
+            self.total_near_claimed += amount;
+        }
+        amount.into()
+    }
+
+    pub fn get_near_balance(&self, account_id: ValidAccountId) -> U128 {
+        self.get_internal_account(account_id.as_ref())
+            .1
+            .map(|mut account| {
+                self.touch(&mut account);
+                account.near_balance
+            })
+            .unwrap_or(0)
+            .into()
+    }
+
+    pub fn get_account(&self, account_id: ValidAccountId) -> Option<HumanAccount> {
+        self.get_internal_account(account_id.as_ref())
+            .1
+            .map(|mut account| {
+                self.touch(&mut account);
+                HumanAccount {
+                    near_balance: account.near_balance.into(),
+                    cucumber_balance: account.cucumber_balance.into(),
+                    near_claimed: account.near_claimed.into(),
+                }
+            })
+    }
+
+    pub fn get_stats(&self) -> HumanStats {
+        HumanStats {
+            total_cucumber_balance: self.total_cucumber_balance.into(),
+            total_near_claimed: self.total_near_claimed.into(),
+            total_near_received: self.total_near_received.into(),
+        }
+    }
+
+    pub fn get_total_near_claimed(&self) -> U128 {
+        self.total_near_claimed.into()
+    }
+
+    pub fn get_total_near_received(&self) -> U128 {
+        self.total_near_received.into()
+    }
+}
+
+#[near_bindgen]
+impl VaultFungibleTokenReceiver for Farm {
+    fn on_receive_with_vault(
         &mut self,
         sender_id: ValidAccountId,
         amount: U128,
         vault_id: VaultId,
-        payload: Base64VecU8,
+        payload: String,
     ) -> Promise {
         if &env::predecessor_account_id() != &self.banana_token_account_id {
             env::panic(b"This farm can only receive bananas through a contract API");
         }
         let payload: OnReceiverPayload =
-            BorshDeserialize::try_from_slice(&payload.0).expect("Failed to parse the payload");
+            serde_json::from_str(&payload).expect("Failed to parse the payload");
 
         let amount: Balance = amount.into();
 
@@ -140,47 +241,6 @@ impl Farm {
                 )
             }
         }
-    }
-
-    pub fn register_account(&mut self) {
-        let (account_id_hash, account) = self.get_mut_account(&env::predecessor_account_id());
-        self.save_account(&account_id_hash, &account);
-    }
-
-    pub fn account_exists(&self, account_id: ValidAccountId) -> bool {
-        self.get_internal_account(account_id.as_ref()).1.is_some()
-    }
-
-    pub fn claim_near(&mut self) -> U128 {
-        let account_id = env::predecessor_account_id();
-        let (account_id_hash, mut account) = self.get_mut_account(&account_id);
-        let amount = account.near_balance;
-        account.near_balance = 0;
-        self.save_account(&account_id_hash, &account);
-        if amount > 0 {
-            Promise::new(account_id).transfer(amount);
-            self.total_near_claimed += amount;
-        }
-        amount.into()
-    }
-
-    pub fn get_near_balance(&self, account_id: ValidAccountId) -> U128 {
-        self.get_internal_account(account_id.as_ref())
-            .1
-            .map(|mut account| {
-                self.touch(&mut account);
-                account.near_balance
-            })
-            .unwrap_or(0)
-            .into()
-    }
-
-    pub fn get_total_near_claimed(&self) -> U128 {
-        self.total_near_claimed.into()
-    }
-
-    pub fn get_total_near_received(&self) -> U128 {
-        self.total_near_received.into()
     }
 }
 
@@ -209,6 +269,7 @@ impl Farm {
             last_near_per_cucumber_numer: self.near_per_cucumber_numer,
             near_balance: 0,
             cucumber_balance: 0,
+            near_claimed: 0,
         });
         self.touch(&mut account);
         (account_id_hash, account)

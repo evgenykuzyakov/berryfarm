@@ -1,0 +1,184 @@
+* {
+  box-sizing: border-box;
+}
+h2 {
+  margin: 16px;
+  display: inline-block;
+}
+body {
+  background-image: url('/berry_cycle_only.png');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: auto;
+  background-position: center right;
+}
+
+.balances {
+  font-family: "Lucida Console",Monaco,monospace;
+  font-size: 1.5em;
+}
+
+.font-weight-bold {
+  font-weight: bold;
+}
+
+.lines {
+  div {
+    margin: 0.5em 0;
+  }
+}
+
+.label {
+  display: inline-block;
+  font-size: 1.5em;
+  width: 8em;
+}
+
+.btn {
+  border: 2px solid #0072CE;
+  padding: 8px;
+  height: 32px;
+  background: white;
+  border-radius: 16px;
+  margin-right: 16px;
+  line-height: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: black;
+  &:disabled {
+    border-color: #ccc !important;;
+    background: white !important;
+    color: #ccc !important;
+  }
+  &:focus {
+    outline: none;
+  }
+  &:hover {
+    background: #ccddff;
+  }
+  &:active {
+    color: white;
+    background: #0072CE;
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+
+.btn-large {
+  border-width: 2px;
+  font-size: 1.5em;
+  height: 2em;
+  padding: 0.5em;
+  border-radius: 1em;
+}
+
+.btn-max {
+  border-top-right-radius: 1em;
+  border-bottom-right-radius: 1em;
+  margin-right: 1em;
+  border: 1px solid #999;
+  &:focus {
+    outline: none;
+  }
+}
+
+.label-for-swap {
+  position: absolute;
+  width: 0;
+  display: inline-block;
+
+  &:first-child {
+    display: inline-block;
+    position: relative;
+    top: 0.05em;
+    left: 0.4em;
+  }
+}
+
+.swap-input {
+  border-top-left-radius: 1em;
+  border-bottom-left-radius: 1em;
+  padding-left: 1.5em;
+  border: 1px solid #999;
+  width: 7em;
+  font-size: 1.5em;
+  line-height: 1em;
+  &:focus {
+    outline: none;
+  }
+}
+
+.btn-success {
+  border-color: #00CE33;
+  &:hover {
+    background: #7e7;
+  }
+}
+
+.btn-outline-none {
+  border: none;
+}
+
+.btn-outline-secondary {
+  margin-top: 1.5em;
+  border-color: #eee;
+}
+
+.container {
+  padding: 16px;
+  display: flex;
+  justify-content: left;
+}
+
+.berry {
+}
+
+.row {
+  display: flex;
+  justify-content: left;
+  width: 100%;
+  > div:not(:first-child) {
+    padding-left: 16px;
+  }
+}
+
+@mixin block {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 16px;
+}
+
+.pixel-board {
+  @include block;
+  border: 1px solid #ddd;
+}
+
+/********************************
+Layout For Tablet / Phone
+********************************/
+
+@media (max-width: 1200px) {
+  .row {
+    flex-direction: column;
+    max-width: 800px;
+    div {
+      padding-left: 0 !important;
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  h2 {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+.float-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
