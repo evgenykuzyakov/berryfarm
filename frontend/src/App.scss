@@ -9,7 +9,7 @@ body {
   background-image: url('/berry_cycle_only.png');
   background-repeat: no-repeat;
   background-attachment: fixed;
-  background-size: auto;
+  background-size: contain;
   background-position: center right;
 }
 
@@ -170,6 +170,7 @@ Layout For Tablet / Phone
   }
 }
 
+
 @media (max-width: 800px) {
   h2 {
     text-align: left;
@@ -180,4 +181,30 @@ Layout For Tablet / Phone
   position: absolute;
   top: 0;
   right: 0;
+}
+
+@media (max-width: 425px) {
+  .float-right {
+    position: relative !important;
+  }
+  .btn-outline-secondary {
+    margin-top: 0;
+  }
+  .btn-large {
+    margin-top: 0.5em;
+  }
+}
+
+.call-to-action {
+  font-size: 3em;
+}
+
+
+.timer {
+  font-family: "Lucida Console",Monaco,monospace;
+  font-size: 3em;
+}
+
+.small {
+  font-size: 2em;
 }

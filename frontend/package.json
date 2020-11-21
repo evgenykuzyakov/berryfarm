@@ -11,6 +11,7 @@
     "near-api-js": "^0.32.0",
     "node-sass": "^4.0.0",
     "react": "^16.13.1",
+    "react-compound-timer": "^1.2.0",
     "react-dom": "^16.13.1",
     "react-input-number": "^5.0.19",
     "react-scripts": "3.4.0"

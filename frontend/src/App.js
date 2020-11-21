@@ -3,6 +3,7 @@ import React from 'react';
 import BN from 'bn.js';
 import * as nearAPI from 'near-api-js'
 import InputNumber from 'react-input-number';
+import Timer from 'react-compound-timer';
 
 const IsMainnet = true;
 const TestNearConfig = {
@@ -115,12 +116,16 @@ class App extends React.Component {
   }
 
   async refreshStats() {
-    let rawStats = await this._contract.get_stats();
+    const currentTime = new Date().getTime();
+    const lastReward = parseFloat(await this._bananaContract.get_last_reward_timestamp()) / 1e6;
+    const rawStats = await this._contract.get_stats();
     const stats = {
       totalSupplyBn: new BN(rawStats.total_cucumber_balance),
       totalSupply: parseFloat(rawStats.total_cucumber_balance) / this._pixelCost,
       totalNearClaimed: parseFloat(rawStats.total_near_claimed) / Math.pow(10, 24),
       totalNearRewarded: parseFloat(rawStats.total_near_received) / Math.pow(10, 24),
+      timeUntilRewards: 1606019138008.904777 - currentTime,
+      timeFromLastRewards: currentTime - lastReward,
     };
     this.setState({
       stats,
@@ -162,8 +167,8 @@ class App extends React.Component {
 
     this._account = this._walletConnection.account();
     this._bananaContract = new nearAPI.Contract(this._account, NearConfig.bananaContractName, {
-      viewMethods: ['get_account', 'get_account_by_index', 'get_lines', 'get_line_versions', 'get_pixel_cost', 'get_account_balance', 'get_account_num_pixels', 'get_account_id_by_index'],
-      changeMethods: ['transfer_with_vault'],
+      viewMethods: ['get_account', 'get_last_reward_timestamp', 'get_account_by_index', 'get_lines', 'get_line_versions', 'get_pixel_cost', 'get_account_balance', 'get_account_num_pixels', 'get_account_id_by_index'],
+      changeMethods: ['transfer_with_vault',],
     });
     this._contract = new nearAPI.Contract(this._account, NearConfig.contractName, {
       viewMethods: ['account_exists', 'get_account', 'get_stats', 'get_near_balance', 'get_total_near_claimed', 'get_total_near_received', 'get_balance', 'get_total_supply'],
@@ -291,7 +296,7 @@ class App extends React.Component {
                     </button>
                   </div>
                   <div className="balances">
-                    Claimed {Near}{account.nearClaimed.toFixed(fraction)} out of {Near}{(account.nearBalance + account.nearClaimed).toFixed(fraction)}
+                    Earned {Near}{(account.nearClaimed + account.nearBalance).toFixed(fraction)}
                   </div>
               </div>
             ) : ""}
@@ -306,19 +311,63 @@ class App extends React.Component {
     ));
     const stats = this.state.stats ? (
         <div>
+          {(this.state.stats.timeUntilRewards > 0) ? (
+            <div>
+              <h3>Countdown until farming begins</h3>
+              <div className="timer">
+                <Timer
+                  initialTime={this.state.stats.timeUntilRewards}
+                  direction="backward"
+                  timeToUpdate={100}
+                  lastUnit="h"
+                >
+                  {() => (
+                    <React.Fragment>
+                      <Timer.Hours />:
+                      <Timer.Minutes formatValue={v => `${v}`.padStart(2, '0')}/>:
+                      <Timer.Seconds formatValue={v => `${v}`.padStart(2, '0')} />.
+                      <Timer.Milliseconds formatValue={v => `${v}`.padStart(3, '0')} />
+                    </React.Fragment>
+                  )}
+                </Timer>
+              </div>
+            </div>
+            ) : (
+              <div>
+                <h3>Time from last reward</h3>
+                <div className="timer small">
+                  <Timer
+                    initialTime={this.state.stats.timeFromLastRewards}
+                    direction="forward"
+                    timeToUpdate={100}
+                    lastUnit="h"
+                  >
+                    {() => (
+                      <React.Fragment>
+                        <Timer.Hours />:
+                        <Timer.Minutes formatValue={v => `${v}`.padStart(2, '0')}/>:
+                        <Timer.Seconds formatValue={v => `${v}`.padStart(2, '0')} />.
+                        <Timer.Milliseconds formatValue={v => `${v}`.padStart(3, '0')} />
+                      </React.Fragment>
+                    )}
+                  </Timer>
+                </div>
+                Use {Avocado} to draw on berry club to trigger {Near} rewards distribution.
+              </div>
+          )}
           <h3>Global Farming Stats</h3>
           <div className="lines">
             <div>
-              <span className="label">Supplied</span>
-              <span className="balances">{Cucumber} {this.state.stats.totalSupply.toFixed(3)}</span>
+              <span className="label">Total {Cucumber} Supplied</span>
+              <span className="balances">{this.state.stats.totalSupply.toFixed(3)}</span>
             </div>
             <div>
-              <span className="label">Rewarded</span>
-              <span className="balances">{Near} {this.state.stats.totalNearRewarded.toFixed(3)}</span>
+              <span className="label">Total {Near} Rewarded</span>
+              <span className="balances">{this.state.stats.totalNearRewarded.toFixed(3)}</span>
             </div>
             <div>
-              <span className="label">Claimed</span>
-              <span className="balances">{Near} {this.state.stats.totalNearClaimed.toFixed(3)}</span>
+              <span className="label">Total {Near} Claimed</span>
+              <span className="balances">{this.state.stats.totalNearClaimed.toFixed(3)}</span>
             </div>
 
           </div>
@@ -328,11 +377,16 @@ class App extends React.Component {
         <div className="container">
           <div className="row">
             <div>
+              <div>
               <h2>Berry Farm {Cucumber}</h2>
               <a
                 className="btn btn-outline-none"
                 href="https://berryclub.io">{Avocado} Berry Club {Banana}
               </a>
+              </div>
+              <div className="call-to-action">
+              Swap {Banana} to stake {Cucumber} to farm {Near}
+              </div>
               {content}
               {stats}
               <div>
