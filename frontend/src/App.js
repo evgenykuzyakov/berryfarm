@@ -5,7 +5,7 @@ import * as nearAPI from 'near-api-js'
 import InputNumber from 'react-input-number';
 import Timer from 'react-compound-timer';
 
-const IsMainnet = true;
+const IsMainnet = false;
 const TestNearConfig = {
   networkId: 'testnet',
   nodeUrl: 'https://rpc.testnet.near.org',
@@ -86,7 +86,7 @@ class App extends React.Component {
     account.bananaPixels = (account.farmingPreference === Berry.Banana) ? (account.numPixels) : 0;
     account.avocadoRewardPerMs = account.avocadoPixels / (24 * 60 * 60 * 1000);
     account.bananaRewardPerMs = account.bananaPixels / (24 * 60 * 60 * 1000);
-    account.bananaRewardPerMsBN = account.bananaBalanceBN / new BN(24 * 60 * 60 * 1000);
+    account.bananaRewardPerMsBN = account.bananaBalanceBN.div(new BN(24 * 60 * 60 * 1000));
     return account;
   }
 
@@ -203,13 +203,13 @@ class App extends React.Component {
   async stakeBananas(bananas) {
     await this.refreshAccountStats();
     if (bananas) {
-      bananas = new BN(Math.trunc(bananas * 100000)) * this._pixelCostBN / new BN(100000);
+      bananas = new BN(Math.trunc(bananas * 100000)).mul(this._pixelCostBN).div(new BN(100000));
     } else {
       bananas = this.state.account.bananaBalanceBN;
     }
     await this._bananaContract.transfer_with_vault({
       receiver_id: NearConfig.contractName,
-      amount: bananas.toFixed(0).toString(),
+      amount: bananas.toString(),
       payload: '"DepositAndStake"',
     }, new BN("50000000000000"), new BN("1"))
   }
