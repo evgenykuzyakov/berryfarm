@@ -337,24 +337,24 @@ class App extends React.Component {
             <div>
               Berry Club distributes rewards at most once per minute
             </div>
-            {account ? (
-              <div>
-                <div>
-                  <span className="label">You Earned {Near}</span>
-                  <span className="balances">
-                    {(account.nearClaimed + account.nearBalance).toFixed(6)}
-                  </span>
-                </div>
-                <div>
-                  <span className="label">Your next reward {Near}</span>
-                  <span className="balances">{(stats.expectedReward * account.percent / 100).toFixed(6)}</span>
-                </div>
-              </div>
-              ): ""}
             <div>
               <span className="label">Next reward {Near}</span>
               <span className="balances">{stats.expectedReward.toFixed(6)}</span>
             </div>
+            {account ? (
+              <div>
+                <div>
+                  <span className="label">You'll get {Near}</span>
+                  <span className="balances">{(stats.expectedReward * account.percent / 100).toFixed(6)}</span>
+                </div>
+                <div>
+                  <span className="label">Total earned {Near}</span>
+                  <span className="balances">
+                    {(account.nearClaimed + account.nearBalance).toFixed(6)}
+                  </span>
+                </div>
+              </div>
+              ): ""}
             <div>
               <span className="label">{(stats.timeToNextRewards > 0) ? "Time until next reward" : "Time from last reward"}</span>
               <span className={"balances" + ((stats.timeToNextRewards < 0) ? " red" : "")}>
