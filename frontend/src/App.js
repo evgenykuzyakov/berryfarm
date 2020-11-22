@@ -183,11 +183,7 @@ class App extends React.Component {
     });
     this._pixelCostBN = new BN(await this._bananaContract.get_pixel_cost());
     this._pixelCost = parseFloat(this._pixelCostBN.toString());
-    if (this._accountId) {
-      await this.refreshAccountStats();
-    } else {
-      await this.refreshStats(true);
-    }
+    await this.refresh();
   }
 
   async requestSignIn() {
@@ -230,6 +226,14 @@ class App extends React.Component {
     this.setState({
       claiming: false
     });
+  }
+
+  async refresh() {
+    if (this._accountId) {
+      await this.refreshAccountStats();
+    } else {
+      await this.refreshStats(true);
+    }
   }
 
   render() {
@@ -328,7 +332,7 @@ class App extends React.Component {
             <h3>Rewards</h3>
             <button
               className="btn"
-              onClick={() => this.refreshStats(true)}
+              onClick={() => this.refresh()}
             >
               Refresh
             </button>
@@ -392,7 +396,7 @@ class App extends React.Component {
             <h3>Global stats</h3>
             <button
               className="btn"
-              onClick={() => this.refreshStats(true)}
+              onClick={() => this.refresh()}
             >
               Refresh
             </button>
