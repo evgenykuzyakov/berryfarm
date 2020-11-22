@@ -109,6 +109,8 @@ class App extends React.Component {
         nearClaimed: parseFloat(cucumberAccount.near_claimed) / Math.pow(10, 24),
       });
     }
+    await this._account.fetchState();
+    account.accountNearBalance = parseFloat(this._account._state.amount) / 1e24;
     account.nearBalance = parseFloat(account.nearBalanceBn.toString()) / Math.pow(10, 24);
     account.cucumberBalance = parseFloat(account.cucumberBalanceBn.toString()) / this._pixelCost;
     account.percent = account.cucumberBalance * 100 / stats.totalSupply;
@@ -305,6 +307,9 @@ class App extends React.Component {
                 <div className="balances">
                   {Cucumber}{' '}{account.cucumberBalance.toFixed(fraction)}{' ('}{account.percent.toFixed(fraction)}{'% share)'}
                 </div>
+                <div className="balances">
+                  {Near}{' '}{account.accountNearBalance.toFixed(fraction)}
+                </div>
                 <div>
                   <button
                     className={"btn btn-success" + ((account.nearBalance > 0) ? " btn-large" : " hidden")}
@@ -341,14 +346,10 @@ class App extends React.Component {
             <div>
               Berry Club distributes rewards at most once per minute
             </div>
-            <div>
-              <span className="label">Next reward {Near}</span>
-              <span className="balances">{stats.expectedReward.toFixed(6)}</span>
-            </div>
             {account ? (
               <div>
                 <div>
-                  <span className="label">You'll get {Near}</span>
+                  <span className="label">Your next reward {Near}</span>
                   <span className="balances">{(stats.expectedReward * account.percent / 100).toFixed(6)}</span>
                 </div>
                 <div>
@@ -402,6 +403,10 @@ class App extends React.Component {
             </button>
           </div>
           <div className="lines">
+            <div>
+              <span className="label">Next reward {Near}</span>
+              <span className="balances">{stats.expectedReward.toFixed(6)}</span>
+            </div>
             <div>
               <span className="label">Total {Cucumber} Supplied</span>
               <span className="balances">{stats.totalSupply.toFixed(3)}</span>
