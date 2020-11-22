@@ -2,8 +2,14 @@
   box-sizing: border-box;
 }
 h2 {
-  margin: 16px;
+  margin: 16px 0;
+}
+h3 {
+  margin: 8px 0;
+}
+h2, h3 {
   display: inline-block;
+  margin-right: 16px;
 }
 body {
   background-image: url('/berry_cycle_only.png');
@@ -11,6 +17,10 @@ body {
   background-attachment: fixed;
   background-size: contain;
   background-position: center right;
+}
+
+.red {
+  color: red;
 }
 
 .balances {
@@ -28,10 +38,14 @@ body {
   }
 }
 
+.larger {
+  font-size: 1.5em;
+}
+
 .label {
   display: inline-block;
   font-size: 1.5em;
-  width: 8em;
+  width: 11em;
 }
 
 .btn {

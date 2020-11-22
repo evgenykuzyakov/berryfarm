@@ -5,7 +5,7 @@ import * as nearAPI from 'near-api-js'
 import InputNumber from 'react-input-number';
 import Timer from 'react-compound-timer';
 
-const IsMainnet = false;
+const IsMainnet = true;
 const TestNearConfig = {
   networkId: 'testnet',
   nodeUrl: 'https://rpc.testnet.near.org',
@@ -115,17 +115,24 @@ class App extends React.Component {
     return account;
   }
 
-  async refreshStats() {
-    const currentTime = new Date().getTime();
+  async refreshStats(forced) {
+    if (!forced && document.hidden) {
+      return;
+    }
+
+    let currentTime = new Date().getTime();
+    const nextReward = parseFloat(await this._bananaContract.get_next_reward_timestamp()) / 1e6;
     const lastReward = parseFloat(await this._bananaContract.get_last_reward_timestamp()) / 1e6;
+    const expectedReward = parseFloat(await this._bananaContract.get_expected_reward()) / 1e24;
     const rawStats = await this._contract.get_stats();
     const stats = {
       totalSupplyBn: new BN(rawStats.total_cucumber_balance),
       totalSupply: parseFloat(rawStats.total_cucumber_balance) / this._pixelCost,
       totalNearClaimed: parseFloat(rawStats.total_near_claimed) / Math.pow(10, 24),
       totalNearRewarded: parseFloat(rawStats.total_near_received) / Math.pow(10, 24),
-      timeUntilRewards: 1606019138008.904777 - currentTime,
+      timeToNextRewards: nextReward - currentTime,
       timeFromLastRewards: currentTime - lastReward,
+      expectedReward,
     };
     this.setState({
       stats,
@@ -133,7 +140,7 @@ class App extends React.Component {
   }
 
   async refreshAccountStats() {
-    await this.refreshStats();
+    await this.refreshStats(true);
     let account = await this.getAccount(this._accountId, this.state.stats);
 
     if (this._balanceRefreshTimer) {
@@ -167,7 +174,7 @@ class App extends React.Component {
 
     this._account = this._walletConnection.account();
     this._bananaContract = new nearAPI.Contract(this._account, NearConfig.bananaContractName, {
-      viewMethods: ['get_account', 'get_last_reward_timestamp', 'get_account_by_index', 'get_lines', 'get_line_versions', 'get_pixel_cost', 'get_account_balance', 'get_account_num_pixels', 'get_account_id_by_index'],
+      viewMethods: ['get_account', 'get_expected_reward', 'get_next_reward_timestamp', 'get_last_reward_timestamp', 'get_account_by_index', 'get_lines', 'get_line_versions', 'get_pixel_cost', 'get_account_balance', 'get_account_num_pixels', 'get_account_id_by_index'],
       changeMethods: ['transfer_with_vault',],
     });
     this._contract = new nearAPI.Contract(this._account, NearConfig.contractName, {
@@ -179,7 +186,7 @@ class App extends React.Component {
     if (this._accountId) {
       await this.refreshAccountStats();
     } else {
-      await this.refreshStats();
+      await this.refreshStats(true);
     }
   }
 
@@ -240,64 +247,69 @@ class App extends React.Component {
           <div>
             { account ? (
               <div className="lines">
-                <h3>Your Balances</h3>
-                  <div className="balances">
-                    {Avocado}{' '}{account.avocadoBalance.toFixed(fraction)}
-                    {(account.avocadoPixels > 0) ? (
-                      <span>
-                        {' (+'}{account.avocadoPixels}{Avocado}{'/day)'}
-                      </span>
-                    ) : ""}
-                  </div>
-                  <div className="balances">
-                    {Banana}{' '}{account.bananaBalance.toFixed(fraction)}
-                    {(account.bananaPixels > 0) ? (
-                      <span>
-                        {' (+'}{account.bananaPixels}{Banana}{'/day)'}
-                      </span>
-                    ) : ""}
-                  </div>
+                <div>
+                  <h3>Your Balances</h3>
+                  <button
+                    className="btn"
+                    onClick={() => this.refreshAccountStats()}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="balances">
+                  {Avocado}{' '}{account.avocadoBalance.toFixed(fraction)}
+                  {(account.avocadoPixels > 0) ? (
+                    <span>
+                      {' (+'}{account.avocadoPixels}{Avocado}{'/day)'}
+                    </span>
+                  ) : ""}
+                </div>
+                <div className="balances">
+                  {Banana}{' '}{account.bananaBalance.toFixed(fraction)}
+                  {(account.bananaPixels > 0) ? (
+                    <span>
+                      {' (+'}{account.bananaPixels}{Banana}{'/day)'}
+                    </span>
+                  ) : ""}
+                </div>
+                <div>
                   <div>
-                    <div>
-                      <span className="balances label-for-swap">{Banana}</span>
-                      <InputNumber
-                        className="balances swap-input"
-                        min={0.001}
-                        max={this.state.account.bananaBalance}
-                        value={this.state.bananaNum}
-                        onChange={(bananaNum) => this.setState({bananaNum})}
-                        enableMobileNumericKeyboard
-                      />
-                      <button
-                        className={"btn-max balances"}
-                        disabled={account.bananaBalance === 0}
-                        onClick={() => this.setState({bananaNum: account.bananaBalance.toFixed(3)})}
-                      >
-                        MAX
-                      </button>
-
-                    <Swap
-                      account={this.state.account}
-                      stakeBananas={(b) => this.stakeBananas(b)}
-                      amount={this.state.bananaNum}
+                    <span className="balances label-for-swap">{Banana}</span>
+                    <InputNumber
+                      className="balances swap-input"
+                      min={0.001}
+                      max={this.state.account.bananaBalance}
+                      value={this.state.bananaNum}
+                      onChange={(bananaNum) => this.setState({bananaNum})}
+                      enableMobileNumericKeyboard
                     />
-                    </div>
-                  </div>
-                  <div className="balances">
-                    {Cucumber}{' '}{account.cucumberBalance.toFixed(fraction)}{' ('}{account.percent.toFixed(fraction)}{'% share)'}
-                  </div>
-                  <div>
                     <button
-                      className={"btn btn-success" + ((account.nearBalance > 0) ? " btn-large" : " hidden")}
-                      disabled={this.state.claiming}
-                      onClick={() => this.claimNear()}
+                      className={"btn-max balances"}
+                      disabled={account.bananaBalance === 0}
+                      onClick={() => this.setState({bananaNum: account.bananaBalance.toFixed(3)})}
                     >
-                      Claim {account.nearBalance.toFixed(fraction)} {Near}
+                      MAX
                     </button>
+
+                  <Swap
+                    account={this.state.account}
+                    stakeBananas={(b) => this.stakeBananas(b)}
+                    amount={this.state.bananaNum}
+                  />
                   </div>
-                  <div className="balances">
-                    Earned {Near}{(account.nearClaimed + account.nearBalance).toFixed(fraction)}
-                  </div>
+                </div>
+                <div className="balances">
+                  {Cucumber}{' '}{account.cucumberBalance.toFixed(fraction)}{' ('}{account.percent.toFixed(fraction)}{'% share)'}
+                </div>
+                <div>
+                  <button
+                    className={"btn btn-success" + ((account.nearBalance > 0) ? " btn-large" : " hidden")}
+                    disabled={this.state.claiming}
+                    onClick={() => this.claimNear()}
+                  >
+                    Claim {account.nearBalance.toFixed(fraction)} {Near}
+                  </button>
+                </div>
               </div>
             ) : ""}
             </div>
@@ -309,17 +321,55 @@ class App extends React.Component {
               onClick={() => this.requestSignIn()}>Log in with NEAR Wallet</button>
         </div>
     ));
-    const stats = this.state.stats ? (
+    const stats = this.state.stats;
+    const statsContent = stats ? (
         <div>
-          {(this.state.stats.timeUntilRewards > 0) ? (
+          <div>
+            <h3>Rewards</h3>
+            <button
+              className="btn"
+              onClick={() => this.refreshStats(true)}
+            >
+              Refresh
+            </button>
+          </div>
+          <div className="lines">
             <div>
-              <h3>Countdown until farming begins</h3>
-              <div className="timer">
+              Berry Club distributes rewards at most once per minute
+            </div>
+            {account ? (
+              <div>
+                <div>
+                  <span className="label">You Earned {Near}</span>
+                  <span className="balances">
+                    {(account.nearClaimed + account.nearBalance).toFixed(6)}
+                  </span>
+                </div>
+                <div>
+                  <span className="label">Your next reward {Near}</span>
+                  <span className="balances">{(stats.expectedReward * account.percent / 100).toFixed(6)}</span>
+                </div>
+              </div>
+              ): ""}
+            <div>
+              <span className="label">Next reward {Near}</span>
+              <span className="balances">{stats.expectedReward.toFixed(6)}</span>
+            </div>
+            <div>
+              <span className="label">{(stats.timeToNextRewards > 0) ? "Time until next reward" : "Time from last reward"}</span>
+              <span className={"balances" + ((stats.timeToNextRewards < 0) ? " red" : "")}>
                 <Timer
-                  initialTime={this.state.stats.timeUntilRewards}
-                  direction="backward"
+                  key={stats.timeToNextRewards}
+                  initialTime={(stats.timeToNextRewards > 0) ? stats.timeToNextRewards : stats.timeFromLastRewards}
+                  direction={(stats.timeToNextRewards > 0) ? "backward" : "forward"}
                   timeToUpdate={100}
                   lastUnit="h"
+                  checkpoints={[
+                    {
+                      time: 0,
+                      callback: () => this.refreshStats(),
+                    },
+                  ]}
                 >
                   {() => (
                     <React.Fragment>
@@ -330,44 +380,35 @@ class App extends React.Component {
                     </React.Fragment>
                   )}
                 </Timer>
-              </div>
+              </span>
             </div>
-            ) : (
-              <div>
-                <h3>Time from last reward</h3>
-                <div className="timer small">
-                  <Timer
-                    initialTime={this.state.stats.timeFromLastRewards}
-                    direction="forward"
-                    timeToUpdate={100}
-                    lastUnit="h"
-                  >
-                    {() => (
-                      <React.Fragment>
-                        <Timer.Hours />:
-                        <Timer.Minutes formatValue={v => `${v}`.padStart(2, '0')}/>:
-                        <Timer.Seconds formatValue={v => `${v}`.padStart(2, '0')} />.
-                        <Timer.Milliseconds formatValue={v => `${v}`.padStart(3, '0')} />
-                      </React.Fragment>
-                    )}
-                  </Timer>
-                </div>
-                Use {Avocado} to draw on berry club to trigger {Near} rewards distribution.
+            {(stats.timeToNextRewards < 0) ? (
+              <div className="larger font-weight-bold">
+                Use {Avocado} to draw a pixel on berry club to distribute {Near} rewards.
               </div>
-          )}
-          <h3>Global Farming Stats</h3>
+            ) : ""}
+          </div>
+          <div>
+            <h3>Global stats</h3>
+            <button
+              className="btn"
+              onClick={() => this.refreshStats(true)}
+            >
+              Refresh
+            </button>
+          </div>
           <div className="lines">
             <div>
               <span className="label">Total {Cucumber} Supplied</span>
-              <span className="balances">{this.state.stats.totalSupply.toFixed(3)}</span>
+              <span className="balances">{stats.totalSupply.toFixed(3)}</span>
             </div>
             <div>
               <span className="label">Total {Near} Rewarded</span>
-              <span className="balances">{this.state.stats.totalNearRewarded.toFixed(3)}</span>
+              <span className="balances">{stats.totalNearRewarded.toFixed(6)}</span>
             </div>
             <div>
               <span className="label">Total {Near} Claimed</span>
-              <span className="balances">{this.state.stats.totalNearClaimed.toFixed(3)}</span>
+              <span className="balances">{stats.totalNearClaimed.toFixed(6)}</span>
             </div>
 
           </div>
@@ -388,7 +429,7 @@ class App extends React.Component {
                 Swap {Banana} to stake {Cucumber} to farm {Near}
               </div>
               {content}
-              {stats}
+              {statsContent}
               <div>
               </div>
             </div>
