@@ -292,7 +292,7 @@ class App extends React.Component {
                     <button
                       className={"btn-max balances"}
                       disabled={account.bananaBalance === 0}
-                      onClick={() => this.setState({bananaNum: account.bananaBalance.toFixed(3)})}
+                      onClick={() => this.setState({bananaNum: ''})}
                     >
                       MAX
                     </button>
@@ -455,7 +455,7 @@ const Swap = (props) => {
       disabled={props.account.bananaBalance < props.amount}
       onClick={() => props.stakeBananas(props.amount)}
     >
-      Swap <span className="font-weight-bold">{props.amount || ""}{props.amount ? "" : "ALL"}{Banana}</span> to <span className="font-weight-bold">{Cucumber}</span>
+      Swap <span className="font-weight-bold">{props.amount || "ALL"}{Banana}</span> to <span className="font-weight-bold">{Cucumber}</span>
     </button>
   );
 }
