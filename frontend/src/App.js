@@ -433,6 +433,10 @@ class App extends React.Component {
                 className="btn btn-outline-none"
                 href="https://berryclub.io">{Avocado} Berry Club {Banana}
               </a>
+              <a
+                className="btn btn-outline-none"
+                href="https://bananaswap.berryclub.io">[BETA] Banana Swap {Banana}
+              </a>
               </div>
               <div className="call-to-action">
                 Swap {Banana} to stake {Cucumber} to farm {Near}
