@@ -9,8 +9,8 @@ const IsMainnet = true;
 const TestNearConfig = {
   networkId: 'testnet',
   nodeUrl: 'https://rpc.testnet.near.org',
-  bananaContractName: 'dev-1604708520705-2360364',
-  contractName: 'dev-1605908677227-6741841',
+  bananaContractName: 'berryclub.testnet',
+  contractName: 'farm.berryclub.testnet',
   walletUrl: 'https://wallet.testnet.near.org',
 };
 const MainNearConfig = {
@@ -177,7 +177,7 @@ class App extends React.Component {
     this._account = this._walletConnection.account();
     this._bananaContract = new nearAPI.Contract(this._account, NearConfig.bananaContractName, {
       viewMethods: ['get_account', 'get_expected_reward', 'get_next_reward_timestamp', 'get_last_reward_timestamp', 'get_account_by_index', 'get_lines', 'get_line_versions', 'get_pixel_cost', 'get_account_balance', 'get_account_num_pixels', 'get_account_id_by_index'],
-      changeMethods: ['transfer_with_vault',],
+      changeMethods: ['transfer_with_vault', 'ft_transfer_call'],
     });
     this._contract = new nearAPI.Contract(this._account, NearConfig.contractName, {
       viewMethods: ['account_exists', 'get_account', 'get_stats', 'get_near_balance', 'get_total_near_claimed', 'get_total_near_received', 'get_balance', 'get_total_supply'],
@@ -212,10 +212,11 @@ class App extends React.Component {
     } else {
       bananas = this.state.account.bananaBalanceBN;
     }
-    await this._bananaContract.transfer_with_vault({
+    await this._bananaContract.ft_transfer_call({
       receiver_id: NearConfig.contractName,
       amount: bananas.toString(),
-      payload: '"DepositAndStake"',
+      memo: `Swapping ${bananas.toString()} 🍌 to get ${bananas.toString()} 🥒`,
+      msg: '"DepositAndStake"',
     }, new BN("50000000000000"), new BN("1"))
   }
 
