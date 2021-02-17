@@ -5,8 +5,12 @@ use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json;
 use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise};
 
+mod fungible_token_receiver;
 mod token;
-use token::*;
+
+pub use crate::fungible_token_receiver::*;
+
+pub use crate::token::*;
 
 #[global_allocator]
 static ALLOC: near_sdk::wee_alloc::WeeAlloc<'_> = near_sdk::wee_alloc::WeeAlloc::INIT;
