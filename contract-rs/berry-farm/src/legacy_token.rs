@@ -213,7 +213,11 @@ impl VaultFungibleToken for Farm {
 impl Farm {
     /// Withdraws `amount` from the `predecessor_id` while comparing it to the `receiver_id`.
     /// Return `predecessor_id` and hash of the predecessor
-    fn withdraw_from_sender(&mut self, receiver_id: &AccountId, amount: Balance) -> AccountId {
+    pub(crate) fn withdraw_from_sender(
+        &mut self,
+        receiver_id: &AccountId,
+        amount: Balance,
+    ) -> AccountId {
         if amount == 0 {
             env::panic(b"Transfer amount should be positive");
         }
@@ -238,7 +242,7 @@ impl Farm {
     }
 
     /// Deposits `amount` to the `account_id`
-    fn deposit_to_account(&mut self, account_id: &AccountId, amount: Balance) {
+    pub(crate) fn deposit_to_account(&mut self, account_id: &AccountId, amount: Balance) {
         if amount == 0 {
             return;
         }

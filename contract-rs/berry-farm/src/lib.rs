@@ -3,14 +3,17 @@ use near_sdk::collections::LookupMap;
 use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json;
-use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise};
+use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, PanicOnDefault, Promise};
 
+mod ft_core;
+mod ft_meta;
+mod ft_storage;
 mod fungible_token_receiver;
-mod token;
+mod legacy_token;
 
 pub use crate::fungible_token_receiver::*;
 
-pub use crate::token::*;
+pub use crate::legacy_token::*;
 
 #[global_allocator]
 static ALLOC: near_sdk::wee_alloc::WeeAlloc<'_> = near_sdk::wee_alloc::WeeAlloc::INIT;
@@ -47,7 +50,7 @@ pub struct HumanStats {
 pub const NEAR_PER_CUCUMBER_DENOM: Balance = 1_000_000_000_000_000_000;
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Farm {
     pub accounts: LookupMap<ShortAccountHash, Account>,
 
@@ -64,12 +67,6 @@ pub struct Farm {
     pub vaults: LookupMap<VaultId, Vault>,
 
     pub next_vault_id: VaultId,
-}
-
-impl Default for Farm {
-    fn default() -> Self {
-        panic!("Contract should be initialized before usage")
-    }
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Clone, PartialEq)]
@@ -111,7 +108,6 @@ pub trait VaultFungibleTokenReceiver {
 impl Farm {
     #[init]
     pub fn new(banana_token_account_id: ValidAccountId) -> Self {
-        assert!(!env::state_exists(), "Already initialized");
         // Registering the account for banana token to be able to withdraw.
         ext_token::register_account(
             env::current_account_id(),
