@@ -11,7 +11,7 @@ impl FungibleTokenMetadataProvider for Farm {
         FungibleTokenMetadata {
             spec: FT_METADATA_SPEC.to_string(),
             name: String::from("Cucumber"),
-            symbol: String::from("CUKE"),
+            symbol: String::from("CUCUMBER"),
             icon: Some(String::from(CUCUMBER_SVG)),
             reference: None,
             reference_hash: None,
